@@ -706,16 +706,15 @@ if (empty($_SESSION['user_name'])) {
 
         // ── Rechercher ────────────────────────────────────────────────────────
         function doSearch() {
-           const body = new URLSearchParams({
+            const body = new URLSearchParams({
                 action: 'rapport_factures',
                 fournisseur_id: $('#sel_fournisseur').val(),
                 contrat_id: $('#sel_contrat').val(),
-                structure_id: $('#sel_structure').val(),
+                structure_id: $('#sel_structure').val(), // Envoie l'ID de la structure
                 monnaie_id: $('#sel_monnaie').val(),
                 statut_id: $('#sel_statut').val(),
-                gestionnaire_id: $('#sel_gestionnaire').val(), // On envoie l'ID maintenant
-             });
-
+                gestionnaire_id: $('#sel_gestionnaire').val(), // Envoie l'ID du gestionnaire
+            });
             $('#btn_search').prop('disabled', true).text('Recherche…');
 
             fetch(API, {
@@ -790,7 +789,7 @@ if (empty($_SESSION['user_name'])) {
                         
                         <!-- NOUVELLE COLONNE ACTION -->
                         <td>
-                            <a href="../Facture/DetailS_Facture.php?id=${r.id}" class="btn-detail">
+                            <a href="../Facture/Details_Facture.php?id=${r.id}" class="btn-detail">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>

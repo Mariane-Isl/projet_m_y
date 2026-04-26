@@ -72,116 +72,118 @@ class Dashboard {
         return $db->query("SELECT id, CONCAT(nom,' ',COALESCE(prenom,'')) AS nom_complet FROM utilisateur WHERE active=1 ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // --- METHODES DE RAPPORTS COMPLEXES ---
-
-    /**
-     * Rapport principal des factures (Correction effectuée sur le gestionnaire)
-     */
-    public static function getRapportFactures(PDO $db, array $filtres): array {
+public static function getRapportFactures(PDO $db, array $filtres): array {
+    
+    $sql = "
+        SELECT
+            fac.id, 
+            fac.Num_facture, 
+            fac.date_facture, 
+            fac.Montant,
+            m.code AS monnaie, 
+            cnt.num_Contrat, 
+            f.Nom_Fournisseur, 
+            rdp.label AS structure, 
+            last_sf.label AS statut_facture, 
+            last_sf.code AS statut_code,
+            latest_hf.max_date AS date_statut, 
+            ov.Num_OV, 
+            last_sov.label AS statut_ov,
+            last_sov.code AS statut_ov_code, 
+            latest_hov.max_date AS date_statut_ov,
+            CONCAT(u.nom, ' ', COALESCE(u.prenom,'')) AS gestionnaire
+        FROM facture fac
+        LEFT JOIN money m ON m.id = fac.money_id
+        LEFT JOIN bordereau brd ON brd.id = fac.Bordereau_id
+        LEFT JOIN contrat cnt ON cnt.id = brd.Contrat_id
+        LEFT JOIN fournisseur f ON f.id = cnt.Fournisseur_id
         
-        $sql = "
-            SELECT
-                fac.id, 
-                fac.Num_facture, 
-                fac.date_facture, 
-                fac.Montant,
-                m.code AS monnaie, 
-                cnt.num_Contrat, 
-                f.Nom_Fournisseur, 
-                rdp.label AS structure, 
-                last_sf.label AS statut_facture, 
-                last_sf.code AS statut_code,
-                latest_hf.max_date AS date_statut, 
-                ov.Num_OV, 
-                last_sov.label AS statut_ov,
-                last_sov.code AS statut_ov_code, 
-                latest_hov.max_date AS date_statut_ov,
-                CONCAT(u.nom, ' ', COALESCE(u.prenom,'')) AS gestionnaire
-            FROM facture fac
-            LEFT JOIN money m ON m.id = fac.money_id
-            LEFT JOIN bordereau brd ON brd.id = fac.Bordereau_id
-            LEFT JOIN contrat cnt ON cnt.id = brd.Contrat_id
-            LEFT JOIN fournisseur f ON f.id = cnt.Fournisseur_id
-            
-            /* --- EXTRACTION DU DERNIER STATUT ET DU DERNIER UTILISATEUR DE L'HISTORIQUE --- */
-            LEFT JOIN (
-                SELECT Factureid, 
-                       CAST(SUBSTRING_INDEX(GROUP_CONCAT(statut_factureid ORDER BY date_statuts DESC), ',', 1) AS UNSIGNED) AS last_statut_id,
-                       CAST(SUBSTRING_INDEX(GROUP_CONCAT(utilisateur_id ORDER BY date_statuts DESC), ',', 1) AS UNSIGNED) AS last_gestionnaire_id,
-                       MAX(date_statuts) AS max_date
-                FROM historique_facture 
-                GROUP BY Factureid
-            ) latest_hf ON latest_hf.Factureid = fac.id
-            LEFT JOIN statut_facture last_sf ON last_sf.id = latest_hf.last_statut_id
-            
-            /* --- JOINTURE O.V --- */
-            LEFT JOIN facture_ordres_virement fov ON fov.Factureid = fac.id
-            LEFT JOIN ordres_virement ov ON ov.id = fov.ordres_virementid
-            LEFT JOIN region_dp rdp ON rdp.id = ov.region_dpid
-            
-            /* --- EXTRACTION DU DERNIER STATUT OV --- */
-            LEFT JOIN (
-                SELECT ordres_virementid, 
-                       CAST(SUBSTRING_INDEX(GROUP_CONCAT(statut_OVid ORDER BY date_status_OV DESC), ',', 1) AS UNSIGNED) AS last_statut_id,
-                       MAX(date_status_OV) AS max_date
-                FROM historique_status_ov 
-                GROUP BY ordres_virementid
-            ) latest_hov ON latest_hov.ordres_virementid = ov.id
-            LEFT JOIN statut_ov last_sov ON last_sov.id = latest_hov.last_statut_id
-            
-            /* --- GESTIONNAIRE : Jointure sur l'utilisateur récupéré de l'historique --- */
-            LEFT JOIN utilisateur u ON u.id = latest_hf.last_gestionnaire_id
-            
-            WHERE 1=1
-        ";
+        /* --- EXTRACTION DU DERNIER STATUT --- */
+        LEFT JOIN (
+            SELECT Factureid, 
+                   CAST(SUBSTRING_INDEX(GROUP_CONCAT(statut_factureid ORDER BY date_statuts DESC), ',', 1) AS UNSIGNED) AS last_statut_id,
+                   MAX(date_statuts) AS max_date
+            FROM historique_facture 
+            GROUP BY Factureid
+        ) latest_hf ON latest_hf.Factureid = fac.id
+        LEFT JOIN statut_facture last_sf ON last_sf.id = latest_hf.last_statut_id
+        
+        /* --- JOINTURE O.V --- */
+        LEFT JOIN facture_ordres_virement fov ON fov.Factureid = fac.id
+        LEFT JOIN ordres_virement ov ON ov.id = fov.ordres_virementid
+        
+        /* --- GESTIONNAIRE : Lié au bordereau --- */
+        LEFT JOIN utilisateur u ON u.id = brd.emeteur_id
+        
+        /* --- STRUCTURE : Liée à la région de l'utilisateur (u.region_dpid) --- */
+        /* CORRECTION ICI : u.region_dpid au lieu de u.region_dp */
+        LEFT JOIN region_dp rdp ON rdp.id = u.region_dp_id
+        
+        /* --- EXTRACTION DU DERNIER STATUT OV --- */
+        LEFT JOIN (
+            SELECT ordres_virementid, 
+                   CAST(SUBSTRING_INDEX(GROUP_CONCAT(statut_OVid ORDER BY date_status_OV DESC), ',', 1) AS UNSIGNED) AS last_statut_id,
+                   MAX(date_status_OV) AS max_date
+            FROM historique_status_ov 
+            GROUP BY ordres_virementid
+        ) latest_hov ON latest_hov.ordres_virementid = ov.id
+        LEFT JOIN statut_ov last_sov ON last_sov.id = latest_hov.last_statut_id
+        
+        WHERE 1=1
+    ";
 
-        $params = [];
+    $params = [];
 
-        if (!empty($filtres['fournisseur_id'])) {
-            $sql .= " AND f.id = :fournisseur_id";
-            $params[':fournisseur_id'] = $filtres['fournisseur_id'];
-        }
-        if (!empty($filtres['contrat_id'])) {
-            $sql .= " AND cnt.id = :contrat_id";
-            $params[':contrat_id'] = $filtres['contrat_id'];
-        }
-        if (!empty($filtres['structure_id'])) {
-            $sql .= " AND (ov.region_dpid = :structure_id OR ov.id IS NULL)";
-            $params[':structure_id'] = $filtres['structure_id'];
-        }
-        if (!empty($filtres['monnaie_id'])) {
-            $sql .= " AND fac.money_id = :monnaie_id";
-            $params[':monnaie_id'] = $filtres['monnaie_id'];
-        }
-        if (!empty($filtres['statut_id'])) {
-            $sql .= " AND last_sf.id = :statut_id";
-            $params[':statut_id'] = $filtres['statut_id'];
-        }
-        if (!empty($filtres['gestionnaire'])) {
-            $sql .= " AND (u.nom LIKE :gestionnaire OR u.prenom LIKE :gestionnaire2)";
-            $params[':gestionnaire'] = '%' . $filtres['gestionnaire'] . '%';
-            $params[':gestionnaire2'] = '%' . $filtres['gestionnaire'] . '%';
-        }
-
-        $sql .= " GROUP BY fac.id";
-        $sql .= " ORDER BY fac.date_facture DESC";
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $totaux = [];
-        foreach ($rows as $r) {
-            $mon = $r['monnaie'] ?? 'DZD';
-            $totaux[$mon] = ($totaux[$mon] ?? 0) + (float)$r['Montant'];
-        }
-
-        return [
-            'count' => count($rows), 
-            'totaux' => $totaux, 
-            'data' => $rows
-        ];
+    if (!empty($filtres['fournisseur_id'])) {
+        $sql .= " AND f.id = :fournisseur_id";
+        $params[':fournisseur_id'] = $filtres['fournisseur_id'];
     }
+    if (!empty($filtres['contrat_id'])) {
+        $sql .= " AND cnt.id = :contrat_id";
+        $params[':contrat_id'] = $filtres['contrat_id'];
+    }
+    
+    // FILTRE STRUCTURE : On utilise u.region_dpid
+    if (!empty($filtres['structure_id'])) {
+        $sql .= " AND u.region_dp_id = :structure_id";
+        $params[':structure_id'] = $filtres['structure_id'];
+    }
+
+    if (!empty($filtres['monnaie_id'])) {
+        $sql .= " AND fac.money_id = :monnaie_id";
+        $params[':monnaie_id'] = $filtres['monnaie_id'];
+    }
+    if (!empty($filtres['statut_id'])) {
+        $sql .= " AND last_sf.id = :statut_id";
+        $params[':statut_id'] = $filtres['statut_id'];
+    }
+    
+    // FILTRE GESTIONNAIRE
+    if (!empty($filtres['gestionnaire_id'])) {
+        $sql .= " AND u.id = :gestionnaire_id";
+        $params[':gestionnaire_id'] = $filtres['gestionnaire_id'];
+    }
+
+    $sql .= " GROUP BY fac.id ORDER BY fac.date_facture DESC";
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $totaux = [];
+    foreach ($rows as $r) {
+        $mon = $r['monnaie'] ?? 'DZD';
+        $totaux[$mon] = ($totaux[$mon] ?? 0) + (float)$r['Montant'];
+    }
+
+    return [
+        'count' => count($rows), 
+        'totaux' => $totaux, 
+        'data' => $rows,
+        'debug_sql' => $sql,
+        'debug_params' => $params
+    ];
+}
 
     public static function getRecapOV(PDO $db, array $filters): array {
         $conditions = ['1=1'];
@@ -208,9 +210,17 @@ class Dashboard {
             JOIN fournisseur f ON f.id = cnt.Fournisseur_id
             JOIN money m ON m.id = ov.moneyid
             JOIN region_dp rdp ON rdp.id = ov.region_dpid
-            LEFT JOIN (SELECT ordres_virementid, SUBSTRING_INDEX(GROUP_CONCAT(statut_OVid ORDER BY date_status_OV DESC), ',', 1) AS last_statut_id, SUBSTRING_INDEX(GROUP_CONCAT(traitant_id ORDER BY date_status_OV DESC), ',', 1) AS last_traitant_id FROM historique_status_ov GROUP BY ordres_virementid) hov_last ON hov_last.ordres_virementid = ov.id
+            LEFT JOIN (
+                SELECT ordres_virementid, 
+                       SUBSTRING_INDEX(GROUP_CONCAT(statut_OVid ORDER BY date_status_OV DESC), ',', 1) AS last_statut_id 
+                FROM historique_status_ov 
+                GROUP BY ordres_virementid
+            ) hov_last ON hov_last.ordres_virementid = ov.id
             LEFT JOIN statut_ov last_sov ON last_sov.id = hov_last.last_statut_id
-            LEFT JOIN utilisateur u ON u.id = hov_last.last_traitant_id
+            
+            /* --- AGENT OV : Jointure directe (à adapter si le nom de colonne diffère dans ordres_virement) --- */
+            LEFT JOIN utilisateur u ON u.id = ov.emeteur_id
+            
             LEFT JOIN facture_ordres_virement fov ON fov.ordres_virementid = ov.id
             WHERE $where
             GROUP BY ov.id
