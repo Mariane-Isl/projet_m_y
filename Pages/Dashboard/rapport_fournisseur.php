@@ -523,7 +523,9 @@ if (empty($_SESSION['user_name'])) {
                     <!-- Gestionnaire -->
                     <div class="filter-item">
                         <label class="filter-label">Gestionnaire</label>
-                        <input type="text" id="inp_gestionnaire" class="filter-ctrl" placeholder="Nom gestionnaire...">
+                        <select id="sel_gestionnaire" class="filter-ctrl">
+                            <option value="">Tous les gestionnaires</option>
+                         </select>
                     </div>
 
                 </div>
@@ -638,6 +640,7 @@ if (empty($_SESSION['user_name'])) {
         loadSelect('get_structures', 'sel_structure', 'label', 'id');
         loadSelect('get_monnaies', 'sel_monnaie', 'code', 'id');
         loadSelect('get_statuts', 'sel_statut', 'label', 'id');
+        loadSelect('get_gestionnaires', 'sel_gestionnaire', 'nom_complet', 'id');
 
         // ── Cascade fournisseur → contrat ─────────────────────────────────────
         $('#sel_fournisseur').on('change', function() {
@@ -703,15 +706,15 @@ if (empty($_SESSION['user_name'])) {
 
         // ── Rechercher ────────────────────────────────────────────────────────
         function doSearch() {
-            const body = new URLSearchParams({
+           const body = new URLSearchParams({
                 action: 'rapport_factures',
                 fournisseur_id: $('#sel_fournisseur').val(),
                 contrat_id: $('#sel_contrat').val(),
                 structure_id: $('#sel_structure').val(),
                 monnaie_id: $('#sel_monnaie').val(),
                 statut_id: $('#sel_statut').val(),
-                gestionnaire: $('#inp_gestionnaire').val(),
-            });
+                gestionnaire_id: $('#sel_gestionnaire').val(), // On envoie l'ID maintenant
+             });
 
             $('#btn_search').prop('disabled', true).text('Recherche…');
 
