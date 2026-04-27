@@ -76,7 +76,10 @@ try {
             break;
 
         case 'recap_ov':
-            $result = Dashboard::getRecapOV($db, $_POST);
+            // On récupère les données soit du flux JSON, soit du $_POST classique
+            $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+            
+            $result = Dashboard::getRecapOV($db, $data);
             echo json_encode([
                 'success' => true,
                 'count'   => $result['count'],
