@@ -860,7 +860,7 @@ if (empty($_SESSION['user_name'])) {
 
         // ── Reset ────────────────────────────────────────────────────────────
         $('#btn_reset').on('click', function() {
-            $('#sel_fournisseur, #sel_structure, #sel_monnaie, #sel_statut').val('');
+            $('#sel_fournisseur, #sel_structure, #sel_monnaie, #sel_statut,  #sel_gestionnaire').val('');
             $('#sel_contrat').html('<option value="">(Fournisseur requis)</option>').prop('disabled', true);
             $('#inp_gestionnaire').val('');
             $('#totaux-row').hide();
