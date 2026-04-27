@@ -496,8 +496,10 @@ if (empty($_SESSION['user_name'])) {
 
                     <!-- Agent -->
                     <div class="filter-item">
-                        <label class="filter-label">Agent</label>
-                        <input type="text" id="inp_agent" class="filter-ctrl" placeholder="Nom de l'agent...">
+                        <label class="filter-label">Agent Traitant</label>
+                        <select id="sel_agent" class="filter-ctrl">
+                            <option value="">Tous les agents...</option>
+                        </select>
                     </div>
 
                 </div>
@@ -616,6 +618,7 @@ if (empty($_SESSION['user_name'])) {
         loadSelect('get_monnaies', 'sel_monnaie', 'code', 'id');
         loadSelect('get_statuts_ov', 'sel_statut_ov', 'label', 'id');
         loadSelect('get_structures', 'sel_structure', 'label', 'id');
+        loadSelect('get_gestionnaires', 'sel_agent', 'nom_complet', 'id');
 
         // ── Cascade fournisseur → contrat ─────────────────────────────────────
         $('#sel_fournisseur').on('change', function() {
@@ -677,7 +680,7 @@ if (empty($_SESSION['user_name'])) {
                 monnaie_id: $('#sel_monnaie').val(),
                 statut_ov_id: $('#sel_statut_ov').val(),
                 structure_id: $('#sel_structure').val(),
-                agent: $('#inp_agent').val(),
+                agent_id: $('#sel_agent').val(), // On envoie l'ID maintenant !
             });
 
             $('#btn_search').prop('disabled', true).text('Recherche…');
@@ -822,7 +825,7 @@ if (empty($_SESSION['user_name'])) {
 
         // ── Reset ─────────────────────────────────────────────────────────────
         $('#btn_reset').on('click', function() {
-            $('#sel_fournisseur, #sel_monnaie, #sel_statut_ov, #sel_structure').val('');
+            $('#sel_fournisseur, #sel_monnaie, #sel_statut_ov, #sel_structure, #sel_agent').val('');
             $('#sel_contrat').html('<option value="">(Fournisseur requis)</option>').prop('disabled', true);
             $('#inp_agent').val('');
             $('#totaux-row').hide();
