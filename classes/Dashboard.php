@@ -210,10 +210,9 @@ class Dashboard {
             $conditions[] = 'last_sov.id = :statut_ov_id';
             $params[':statut_ov_id'] = (int)$filters['statut_ov_id'];
         }
-        if (!empty($filters['agent'])) {
-            $conditions[] = "(u.nom LIKE :agent OR u.prenom LIKE :agent2)";
-            $params[':agent']  = '%' . $filters['agent'] . '%';
-            $params[':agent2'] = '%' . $filters['agent'] . '%';
+        if (!empty($filters['agent_id'])) {
+        $conditions[] = 'hov_last.last_traitant_id = :agent_id';
+        $params[':agent_id'] = (int)$filters['agent_id'];
         }
 
         $where = implode(' AND ', $conditions);
@@ -224,6 +223,7 @@ class Dashboard {
                 COALESCE((SELECT SUM(fac2.Montant) FROM facture_ordres_virement fov2 JOIN facture fac2 ON fac2.id = fov2.Factureid WHERE fov2.ordres_virementid = ov.id), 0) AS montant_total,
                 last_sov.label AS statut_ov, last_sov.code AS statut_ov_code,
                 hov_last.date_statut_ov AS dernier_traitement,
+                hov_last.last_traitant_id AS agent_id, 
                 CONCAT(u.nom, ' ', COALESCE(u.prenom,'')) AS agent,
                 COUNT(fov.Factureid) AS nb_factures
             FROM ordres_virement ov
