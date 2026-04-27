@@ -61,7 +61,50 @@ try {
         case 'get_gestionnaires':
             echo json_encode(['success' => true, 'data' => Dashboard::getGestionnaires($db)]);
             break;
-        // ... (autres cases)
+        case 'rapport_factures':
+            // Accepte les données POST classiques (FormData) ou JSON (Fetch)
+            $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+            
+            $result = Dashboard::getRapportFactures($db, $data);
+            
+            // CORRECTION MAJEURE ICI : Ajout des flags JSON pour ne pas planter sur les accents !
+            echo json_encode([
+                'success' => true,
+                'count'   => $result['count'],
+                'totaux'  => $result['totaux'],
+                'data'    => $result['data'],
+                'debug'   => [
+                    'sql' => $result['debug_sql'],
+                    'params' => $result['debug_params']
+                ]
+            ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            break;
+
+        case 'recap_ov':
+            $result = Dashboard::getRecapOV($db, $_POST);
+            echo json_encode([
+                'success' => true,
+                'count'   => $result['count'],
+                'totaux'  => $result['totaux'],
+                'data'    => $result['data']
+            ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            break;
+
+        case 'graphique_performance':
+            $result = Dashboard::getPerformanceGestionnaires($db, $_POST);
+            echo json_encode(array_merge(['success' => true], $result), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            break;
+
+        case 'graphique_regional':
+            $result = Dashboard::getRepartitionRegionale($db, $_POST);
+            echo json_encode(array_merge(['success' => true], $result), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            break;
+
+        case 'graphique_leadtime':
+            $result = Dashboard::getLeadTime($db, $_POST);
+            echo json_encode(array_merge(['success' => true], $result), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            break;
+
         default:
             echo json_encode(['error' => 'Action inconnue']);
             break;
