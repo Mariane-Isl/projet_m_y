@@ -375,9 +375,21 @@ $baseUrl     = str_replace('\\', '/', substr($projectRoot, strlen($docRoot)));
     }
 
     /* ── Statut badges colors ── */
-    .sf-REJETER { background: rgba(240,82,82,.12); color: var(--accent-red); }
-    .sf-NON_CONTROLE { background: rgba(155,109,255,.12); color: var(--accent-violet); }
-    .sf-RECU { background: rgba(59,158,255,.12); color: var(--accent-blue); }
+    .sf-REJETER {
+        background: rgba(240, 82, 82, .12);
+        color: var(--accent-red);
+    }
+
+    .sf-NON_CONTROLE {
+        background: rgba(155, 109, 255, .12);
+        color: var(--accent-violet);
+    }
+
+    .sf-RECU {
+        background: rgba(59, 158, 255, .12);
+        color: var(--accent-blue);
+    }
+
     .sf-EN_COURS {
         background: rgba(245, 166, 35, .12);
         color: #f5a623;
@@ -456,6 +468,7 @@ $baseUrl     = str_replace('\\', '/', substr($projectRoot, strlen($docRoot)));
     .lt-bar-fill.REJETER {
         background: linear-gradient(90deg, #c40000, #f05252);
     }
+
     .lt-bar-fill.EN_COURS {
         background: linear-gradient(90deg, #c47d00, #f5a623);
     }
@@ -1025,6 +1038,7 @@ $baseUrl     = str_replace('\\', '/', substr($projectRoot, strlen($docRoot)));
                     btn.prop('disabled', false).html(`<svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg> Charger`);
                     if (!res.success || !res.data.length) {
                         $('#perf_chart_wrap').html('<div class="chart-placeholder"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>Aucune donnée</div>');
+                        $('#perf_details, #perf_subtitle').hide();
                         return;
                     }
                     lastPerfData = res;
@@ -1216,6 +1230,7 @@ $baseUrl     = str_replace('\\', '/', substr($projectRoot, strlen($docRoot)));
                     btn.prop('disabled', false).html(`<svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg> Charger`);
                     if (!res.success || !res.data.length) {
                         $('#reg_chart_wrap').html('<div class="chart-placeholder"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Aucune donnée</div>');
+                        $('#reg_details, #reg_subtitle').hide();
                         return;
                     }
                     lastRegData = res;
